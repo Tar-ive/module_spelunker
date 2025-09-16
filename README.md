@@ -139,7 +139,7 @@ Our approach is inspired by:
 
 ## ⚠️ Honest Limitations
 
-I'll be transparent - I don't have extensive B2B SaaS experience, and this problem might not resonate with everyone in the class. But here's what I do know:
+I'll be transparent - this problem might not resonate with everyone in the class. But here's what I do know:
 
 - **Historical patterns aren't perfect** - We can only catch ~70% of failures
 - **Black swan events** - Novel bugs we've never seen before will slip through
