@@ -1,30 +1,36 @@
-# Brillance SaaS Landing Page
+# Module Spelunker – Agentic Safety Network
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+Module Spelunker is the landing site for AgsaNet AI, a static intelligence layer that catches brittle agent flows, token waste, and risky SDK usage before they ship to production.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/sakshams-projects-1f763efb/v0-brillance-saa-s-landing-page)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/projects/eIS6plKVrqW)
+The site is built with **Next.js 14**, **Tailwind**, and the v0 component kit, then fully customized around the Module Spelunker product brief.
 
-## Overview
+## 🧭 What\'s on the page?
+- Problem + positioning for pre-runtime agent assurance
+- Core capabilities (Static SDK Validator, Pattern Match Engine, Token Efficiency Analyzer, Deterministic CI/CD Gate)
+- Persona value for AI engineers, SRE/DevOps, and platform architects
+- Deterministic metrics and roadmap pulled from the ideation document
+- Beta access form wired to [Formcarry](https://formcarry.com/s/r-m7iylu-Vi) for instant inbox delivery
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+## 🚀 Quick start
+```bash
+pnpm install
+pnpm dev           # defaults to http://localhost:3000
+pnpm dev -- -p 3002 # run on http://localhost:3002
+```
 
-## Deployment
+## 🧪 Checks
+```bash
+pnpm lint  # Next.js lint (font warnings remain until fonts move to next/font)
+pnpm build # production build
+```
 
-Your project is live at:
+## 🛠️ Tech stack
+- Next.js App Router
+- Tailwind CSS (v4 preview)
+- Lucide icons
+- Formcarry for beta form submissions
 
-**[https://vercel.com/sakshams-projects-1f763efb/v0-brillance-saa-s-landing-page](https://vercel.com/sakshams-projects-1f763efb/v0-brillance-saa-s-landing-page)**
+## 📄 License
+MIT
 
-## Build your app
-
-Continue building your app on:
-
-**[https://v0.app/chat/projects/eIS6plKVrqW](https://v0.app/chat/projects/eIS6plKVrqW)**
-
-## How It Works
-
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+Built with ❤️ by Saksham Adhikari at Texas State University.
