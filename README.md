@@ -4,7 +4,7 @@ Module Spelunker is the landing site for AgsaNet AI, a static intelligence layer
 
 The site is built with **Next.js 14**, **Tailwind**, and the v0 component kit, then fully customized around the Module Spelunker product brief.
 
-## 🧭 What\'s on the page?
+## 🧭 What's on the page?
 - Problem + positioning for pre-runtime agent assurance
 - Core capabilities (Static SDK Validator, Pattern Match Engine, Token Efficiency Analyzer, Deterministic CI/CD Gate)
 - Persona value for AI engineers, SRE/DevOps, and platform architects
