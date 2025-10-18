@@ -19,10 +19,10 @@ const instrumentSerif = Instrument_Serif({
 })
 
 export const metadata: Metadata = {
-  title: "Brillance - Effortless Custom Contract Billing",
+  title: "Module Spelunker – Static intelligence for agentic systems",
   description:
-    "Streamline your billing process with seamless automation for every custom contract, tailored by Brillance.",
-    generator: 'v0.app'
+    "Module Spelunker delivers proactive static analysis, pattern mining, and deterministic CI gating for AI engineering teams.",
+  generator: "v0.app",
 }
 
 export default function RootLayout({
