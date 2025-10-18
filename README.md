@@ -171,8 +171,8 @@ As a student at Texas State, I'm looking for feedback on:
 
 ## 📬 Contact
 
-**Saksham Yadav**
-Computer Science @ Texas State University
+**Saksham Adhikari**
+Computer Information Systems @ Texas State University
 Looking for: Feedback, beta testers, and advisors
 
 ---
