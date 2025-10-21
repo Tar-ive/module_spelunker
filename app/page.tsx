@@ -20,7 +20,11 @@ import {
   Workflow,
 } from "lucide-react"
 
+
+  // heroHighlights defines the key benefits displayed in the hero section of the landing page.
+// Each object includes a title, description, and an icon c
 const heroHighlights = [
+
   {
     title: "Pre-runtime failure detection",
     description: "Catches brittle agent flows, schema mismatches, and risky SDK calls before code ships.",
@@ -38,6 +42,9 @@ const heroHighlights = [
   },
 ]
 
+
+// coreCapabilities lists the primary modules offered by the tool along with a summary, bullet points, and an icon.
+// Each object represents a capability with details students can learn from.
 const coreCapabilities = [
   {
     name: "Static SDK Validator",
@@ -47,7 +54,8 @@ const coreCapabilities = [
       "Precisely flags missing, extra, and mistyped parameters with file:line:col context",
       "Never crashes on syntax errors – downgrades to warnings with recovery",
       "Configurable include/exclude patterns that mirror real repos",
-    ],
+ 
+],
     icon: Binary,
   },
   {
@@ -106,7 +114,11 @@ const differentiators = [
     description: "Token and performance modeling land alongside supply-chain checks, so you prioritize the right fix.",
     icon: Lock,
   },
-]
+
+// differentiators highlight features that set the platform apart.
+// Each object includes a title, description, and icon component.
+]// personas define the user roles this platform targets, their pain points, and how the product helps them.
+
 
 const personas = [
   {
@@ -128,6 +140,9 @@ const personas = [
     icon: Globe2,
   },
 ]
+    // metrics define quantifiable scores computed by the system to guide improvements.
+// Each object includes a label and an explanation of its meaning.
+
 
 const metrics = [
   {
@@ -152,6 +167,8 @@ const metrics = [
   },
 ]
 
+// roadmap outlines the phased rollout timeline for the tool.
+// Each object defines a phase with its name, time window, and key focus.
 const roadmap = [
   {
     phase: "Phase 1 · Developer Adoption",
@@ -185,9 +202,15 @@ const workflow = [
     step: "Alert & Act",
     detail: "Surface inline fixes, CI annotations, OTEL events, and token optimization plans ready for automation.",
     icon: CheckCircle2,
-  },
+ 
+  // workflow outlines the sequence of processes used to mine patterns, model them, and act upon them.
+// Each entry includes a step name, detailed description, and an icon.
+},
 ]
 
+
+// LandingPage composes the entire landing page using the defined sections above.
+// It returns the full page markup with hero, core capabilities, personas, metrics, roadmap, and workflow sections.
 export default function LandingPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#05060f] text-white">
