@@ -1,0 +1,33 @@
+{
+  "pyguard": {
+    "enabled": true,
+    "version": "2.0",
+    "description": "Pre-runtime Python validation system",
+    "features": {
+      "syntax_validation": true,
+      "static_analysis": true,
+      "pattern_matching": true,
+      "security_checks": true
+    },
+    "security": {
+      "block_dangerous_rm": true,
+      "block_env_file_access": true,
+      "allowed_env_files": [".env.sample", ".env.example"]
+    },
+    "logging": {
+      "pre_tool_use": true,
+      "post_tool_use": true,
+      "user_prompts": false
+    }
+  },
+  "hooks": {
+    "pre_tool_use": ".claude/hooks/pre_tool_use.py",
+    "post_tool_use": ".claude/hooks/post_tool_use.py",
+    "user_prompt_submit": ".claude/hooks/user_prompt_submit.py"
+  },
+  "logging": {
+    "directory": "logs",
+    "max_entries": 100,
+    "enabled": true
+  }
+}

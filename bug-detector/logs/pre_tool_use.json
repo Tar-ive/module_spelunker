@@ -1,0 +1,14 @@
+[
+  {
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "python test.py"
+    }
+  },
+  {
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "python test.py"
+    }
+  }
+]

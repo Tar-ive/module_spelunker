@@ -42,6 +42,41 @@
   --font-instrument-serif: "Instrument Serif", ui-serif, serif;
 }
 
+.dark {
+  --background: #0a0a0a;
+  --foreground: #00ff41;
+  --card: #111111;
+  --card-foreground: #00ff41;
+  --popover: #0a0a0a;
+  --popover-foreground: #00ff41;
+  --primary: #059669;
+  --primary-foreground: #ffffff;
+  --secondary: #10b981;
+  --secondary-foreground: #ffffff;
+  --muted: #333333;
+  --muted-foreground: #888888;
+  --accent: #10b981;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #333333;
+  --input: #111111;
+  --ring: #059669;
+  --chart-1: #059669;
+  --chart-2: #10b981;
+  --chart-3: #00ff41;
+  --chart-4: #0891b2;
+  --chart-5: #f59e0b;
+  --sidebar: #0a0a0a;
+  --sidebar-foreground: #00ff41;
+  --sidebar-primary: #059669;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #10b981;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #333333;
+  --sidebar-ring: #059669;
+}
+
 @theme inline {
   --font-sans: var(--font-inter);
   --font-serif: var(--font-instrument-serif);
@@ -125,4 +160,20 @@
 
 .backdrop-blur-custom {
   backdrop-filter: blur(8.25px);
+}
+
+/* Cyberpunk Terminal Theme Animations */
+@keyframes blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.blink {
+  animation: blink 1s step-end infinite;
 }

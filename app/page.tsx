@@ -203,13 +203,22 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:items-end">
-              <Link
-                href="#early-access"
-                className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:scale-[1.02] hover:shadow-indigo-500/40"
-              >
-                Request early access
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
+              <div className="flex gap-2">
+                <Link
+                  href="/pyguard"
+                  className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-green-500/25 transition hover:scale-[1.02] hover:shadow-green-500/40"
+                >
+                  Try PyGuard Terminal
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+                <Link
+                  href="#early-access"
+                  className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:scale-[1.02] hover:shadow-indigo-500/40"
+                >
+                  Request access
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </div>
               <span className="text-xs text-white/60">Built for AI engineers, SRE, and platform teams.</span>
             </div>
           </div>
