@@ -201,6 +201,10 @@ export default function LandingPage() {
               <p className="mt-3 max-w-2xl text-sm text-white/70 sm:text-base">
                 Catch failure-prone SDK calls, orchestration gaps, and runaway token spend before your agents ever hit production.
               </p>
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2">
+                <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-400"></div>
+                <span className="text-xs text-emerald-300">Doing RL mining of error patterns, and finetuning models, going deep currently</span>
+              </div>
             </div>
             <div className="flex flex-col gap-3 sm:items-end">
               <div className="flex gap-2">
