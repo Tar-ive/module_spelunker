@@ -40,3 +40,6 @@ backend/venv/
 backend/env/
 *.egg-info/
 .pytest_cache/
+
+# Heroku - using heroku.yml for container deployment, not Procfile
+Procfile
