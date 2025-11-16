@@ -12,6 +12,7 @@ class SecurityManager:
     # Only allow PyGuard CLI commands and basic utilities
     ALLOWED_COMMANDS = [
         "pyguard",      # All pyguard subcommands
+        "python3",      # Python interpreter (for pyguard CLI)
         "clear",        # Terminal clear
         "ls",           # List files (for UX)
         "cat",          # Read files (for debugging)

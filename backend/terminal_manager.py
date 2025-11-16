@@ -64,6 +64,10 @@ class TerminalManager:
         # Prepare command
         cmd_parts = command.split()
         
+        # If command starts with 'pyguard', run it via Python
+        if cmd_parts[0] == 'pyguard':
+            cmd_parts = ['python3', 'cli.py'] + cmd_parts[1:]
+        
         try:
             # Execute command with subprocess
             process = await asyncio.create_subprocess_exec(
