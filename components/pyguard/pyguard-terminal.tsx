@@ -2,27 +2,29 @@
 
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
+import { WebSocketClient } from "@/lib/websocket-client"
 
 interface PyGuardTerminalProps {
   onExitTriggered?: (isExiting: boolean) => void
 }
 
-const FULL_TEXT = "pyguard - pre-runtime python validation"
+type ConnectionState = 'connecting' | 'waking' | 'connected' | 'disconnected' | 'error'
 
 export function PyGuardTerminal({ onExitTriggered }: PyGuardTerminalProps) {
-  const [displayText, setDisplayText] = useState("")
-  const [showCursor, setShowCursor] = useState(true)
+  // WebSocket state
+  const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected')
   const [terminalLines, setTerminalLines] = useState<string[]>([])
-  const [isInteractive, setIsInteractive] = useState(false)
   const [userInput, setUserInput] = useState("")
-  const [showInputCursor, setShowInputCursor] = useState(true)
+  const [isExecuting, setIsExecuting] = useState(false)
   const [commandHistory, setCommandHistory] = useState<string[]>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
+  const [showInputCursor, setShowInputCursor] = useState(true)
   const [showBSOD, setShowBSOD] = useState(false)
   const [isExitSequenceActive, setIsExitSequenceActive] = useState(false)
   const [countdown, setCountdown] = useState(7)
   const [showRestartButton, setShowRestartButton] = useState(false)
 
+  const wsClient = useRef<WebSocketClient | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const exitTimeoutsRef = useRef<NodeJS.Timeout[]>([])
 
@@ -31,143 +33,92 @@ export function PyGuardTerminal({ onExitTriggered }: PyGuardTerminalProps) {
     exitTimeoutsRef.current = []
   }
 
-  const processCommand = (command: string): string[] => {
-    const cmd = command.toLowerCase().trim()
-    setTerminalLines([])
-
-    switch (cmd) {
-      case "help":
-        return [
-          '<span class="text-cyan-400 font-bold">PyGuard Commands:</span>',
-          '  <span class="text-yellow-400">clear</span>         - <span class="text-gray-400">Clear the terminal screen</span>',
-          '  <span class="text-yellow-400">about</span>         - <span class="text-gray-400">About PyGuard</span>',
-          '  <span class="text-yellow-400">demo</span>          - <span class="text-gray-400">Run validation demo</span>',
-          '  <span class="text-yellow-400">patterns</span>      - <span class="text-gray-400">List bug patterns</span>',
-          '  <span class="text-yellow-400">validate</span>      - <span class="text-gray-400">Validate Python code</span>',
-          '  <span class="text-yellow-400">features</span>      - <span class="text-gray-400">Show PyGuard features</span>',
-          '  <span class="text-yellow-400">flipthebits</span>   - <span class="text-gray-400">Emergency exit protocol</span>',
-        ]
-
-      case "clear":
-        return ["CLEAR_SCREEN"]
-
-      case "about":
-        return [
-          '<span class="text-green-400 font-bold">🛡️ PyGuard - Pre-Runtime Python Validation</span>',
-          "",
-          '<span class="text-cyan-400">Version:</span> <span class="text-white">2.0.0</span>',
-          '<span class="text-cyan-400">Architecture:</span> <span class="text-white">Claude Code SDK + MCP Tools + Groq Vision</span>',
-          '<span class="text-cyan-400">Purpose:</span> <span class="text-white">Catch Python errors BEFORE execution</span>',
-          "",
-          '<span class="text-yellow-400">Key Features:</span>',
-          '  • <span class="text-green-300">Pre-Runtime Validation</span> - Catches errors before python script.py runs',
-          '  • <span class="text-green-300">Three-Tier Checking</span> - Syntax (10ms), Static (100ms), Patterns (500ms)',
-          '  • <span class="text-green-300">Pattern Matching</span> - 13+ known Python bug patterns',
-          '  • <span class="text-green-300">OCR Support</span> - Extract errors from screenshots via Groq Vision',
-          "",
-          '<span class="text-cyan-400">Repository:</span> <a href="https://github.com/Tar-ive" target="_blank" class="text-green-300 hover:underline">github.com/Tar-ive</a>',
-        ]
-
-      case "demo":
-        return [
-          '<span class="text-cyan-400">$ pyguard validate sample.py</span>',
-          '<span class="text-yellow-400">🔍 Analyzing Python code...</span>',
-          "",
-          '<span class="text-green-400">✓ Tier 1: Syntax check passed</span> <span class="text-gray-400">(10ms)</span>',
-          '<span class="text-red-400">✗ Tier 2: Static analysis found 2 issues</span> <span class="text-gray-400">(100ms)</span>',
-          '  <span class="text-orange-400">sample.py:15:12</span> Missing required parameter <span class="text-white">"temperature"</span>',
-          '  <span class="text-orange-400">sample.py:23:8</span> Potential <span class="text-red-300">IndexError</span> in list access',
-          "",
-          '<span class="text-cyan-400">🎯 Tier 3: Pattern match detected</span> <span class="text-gray-400">(500ms)</span>',
-          '  <span class="text-white">Pattern:</span> <span class="text-magenta-400">OpenAI SDK misconfiguration</span>',
-          '  <span class="text-white">Confidence:</span> <span class="text-green-300">87%</span>',
-          '  <span class="text-white">Known issue:</span> <span class="text-cyan-300">GH-1234</span>',
-          "",
-          '<span class="text-green-400 font-bold">💡 Suggested fix:</span>',
-          '<span class="text-white">  client = OpenAI(temperature=0.7, max_tokens=100)</span>',
-          "",
-          '<span class="text-yellow-400">⏱️ Total validation time: 610ms</span>',
-          '<span class="text-red-400 font-bold">❌ Execution blocked - fix issues before running</span>',
-        ]
-
-      case "validate":
-        return [
-          '<span class="text-cyan-400">$ pyguard validate --help</span>',
-          "",
-          '<span class="text-white">Usage: pyguard validate [OPTIONS] FILE</span>',
-          "",
-          '<span class="text-yellow-400">Options:</span>',
-          '  <span class="text-green-300">--file PATH</span>      Python file to validate',
-          '  <span class="text-green-300">--code TEXT</span>      Inline Python code to validate',
-          '  <span class="text-green-300">--output PATH</span>    Save fixed code to file',
-          '  <span class="text-green-300">--interactive</span>    Interactive mode with Claude',
-          "",
-          '<span class="text-cyan-400">Examples:</span>',
-          '  <span class="text-gray-400">pyguard validate --file script.py</span>',
-          '  <span class="text-gray-400">pyguard validate --code "def test(): pass"</span>',
-        ]
-
-      case "patterns":
-        return [
-          '<span class="text-cyan-400 font-bold">📚 Known Bug Patterns Database</span>',
-          "",
-          '<span class="text-yellow-400">Total patterns:</span> <span class="text-white">13+</span>',
-          '<span class="text-yellow-400">Coverage:</span> <span class="text-white">OpenAI SDK, LangChain, Common Python</span>',
-          "",
-          '<span class="text-green-400">Sample Patterns:</span>',
-          '  1. <span class="text-magenta-400">OpenAI API key missing</span> - Confidence: 95%',
-          '  2. <span class="text-magenta-400">Temperature out of range [0,2]</span> - Confidence: 92%',
-          '  3. <span class="text-magenta-400">Missing required parameters</span> - Confidence: 88%',
-          '  4. <span class="text-magenta-400">Type mismatch in function args</span> - Confidence: 85%',
-          '  5. <span class="text-magenta-400">Undefined variable reference</span> - Confidence: 90%',
-          '  6. <span class="text-magenta-400">IndexError in list access</span> - Confidence: 87%',
-          "",
-          '<span class="text-cyan-400">Pattern sources:</span>',
-          '  • GitHub issues and PRs',
-          '  • Stack Overflow threads',
-          '  • Production error logs',
-          '  • Community bug reports',
-        ]
-
-      case "features":
-        return [
-          '<span class="text-cyan-400 font-bold">⚡ PyGuard Feature Matrix</span>',
-          "",
-          '<span class="text-green-400">🛡️ Pre-Runtime Validation:</span>',
-          '  • Blocks execution until all checks pass',
-          '  • No wasted time on runtime errors',
-          '  • Educational error messages',
-          "",
-          '<span class="text-green-400">🔍 Three-Tier Analysis:</span>',
-          '  • <span class="text-yellow-400">Tier 1:</span> AST syntax check (~10ms)',
-          '  • <span class="text-yellow-400">Tier 2:</span> Static analysis (~100ms)',
-          '  • <span class="text-yellow-400">Tier 3:</span> Pattern matching (~500ms)',
-          "",
-          '<span class="text-green-400">🤖 Claude Integration:</span>',
-          '  • PreToolUse hook intercepts execution',
-          '  • Auto-fix suggestions via Claude',
-          '  • Interactive debugging mode',
-          "",
-          '<span class="text-green-400">🔗 MCP Tools:</span>',
-          '  • Bug pattern examples as few-shot prompts',
-          '  • Programmable bug fixing',
-          '  • Knowledge base integration',
-          "",
-          '<span class="text-green-400">📸 OCR Support:</span>',
-          '  • Groq Vision API (llama-4-scout-17b)',
-          '  • Extract errors from screenshots',
-          '  • Multi-modal error detection',
-        ]
-
-      case "flipthebits":
-      case "flipbits":
-      case "flip":
-        executeExit()
-        return [""]
-
-      default:
-        return ['<span class="text-red-400">[COMMAND NOT FOUND]</span> Type <span class="text-yellow-400">help</span> for available commands']
+  // Initialize WebSocket connection
+  useEffect(() => {
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000/ws/terminal'
+    
+    wsClient.current = new WebSocketClient({
+      url: wsUrl,
+      onMessage: handleWebSocketMessage,
+      onStateChange: setConnectionState,
+    })
+    
+    wsClient.current.connect()
+    
+    return () => {
+      wsClient.current?.disconnect()
     }
+  }, [])
+
+  const handleWebSocketMessage = (message: any) => {
+    switch (message.type) {
+      case 'waking':
+        setTerminalLines(prev => [
+          ...prev,
+          '<span class="text-yellow-400 animate-pulse">⏳ Waking up server...</span>',
+          '<span class="text-gray-400 text-xs">First connection may take 10-30 seconds</span>',
+        ])
+        break
+      
+      case 'ready':
+        setTerminalLines(prev => [
+          ...prev,
+          '<span class="text-green-400">✅ Connected to PyGuard Terminal</span>',
+          '<span class="text-cyan-400">Type "help" for available commands</span>',
+          '',
+        ])
+        break
+      
+      case 'stdout':
+        if (message.line === 'CLEAR_SCREEN') {
+          setTerminalLines([])
+        } else {
+          setTerminalLines(prev => [...prev, message.line])
+        }
+        break
+      
+      case 'error':
+        setTerminalLines(prev => [
+          ...prev,
+          `<span class="text-red-400">${message.message}</span>`,
+        ])
+        setIsExecuting(false)
+        break
+      
+      case 'complete':
+        setIsExecuting(false)
+        setTerminalLines(prev => [...prev, ''])
+        break
+    }
+  }
+
+  const sendCommand = (command: string) => {
+    if (!command.trim()) return
+    
+    // Check for flipthebits easter egg
+    const cmd = command.toLowerCase().trim()
+    if (cmd === "flipthebits" || cmd === "flipbits" || cmd === "flip") {
+      executeExit()
+      return
+    }
+    
+    // Show command in terminal
+    setTerminalLines(prev => [
+      ...prev,
+      `<span class="text-cyan-400">$ ${command}</span>`,
+    ])
+    
+    setIsExecuting(true)
+    
+    // Send to backend
+    wsClient.current?.send(command)
+    
+    // Add to history
+    setCommandHistory(prev => [...prev, command])
+    setHistoryIndex(-1)
+    
+    // Clear input
+    setUserInput("")
   }
 
   const executeExit = async () => {
@@ -256,23 +207,10 @@ export function PyGuardTerminal({ onExitTriggered }: PyGuardTerminalProps) {
   }
 
   const handleInputSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (isExitSequenceActive) return
+    if (isExitSequenceActive || isExecuting) return
 
     if (e.key === "Enter" && userInput.trim()) {
-      const command = userInput.trim()
-      const response = processCommand(command)
-
-      setCommandHistory((prev) => [...prev, command])
-      setHistoryIndex(-1)
-
-      if (response[0] === "CLEAR_SCREEN") {
-        setTerminalLines([])
-      } else {
-        setTerminalLines((prev) => [...prev, `root@pyguard:~# ${command}`, ...response, ""])
-      }
-
-      setUserInput("")
-
+      sendCommand(userInput.trim())
       setTimeout(() => {
         inputRef.current?.focus()
       }, 100)
@@ -298,94 +236,13 @@ export function PyGuardTerminal({ onExitTriggered }: PyGuardTerminalProps) {
     }
   }
 
+  // Input cursor blink effect
   useEffect(() => {
-    const initTerminal = async () => {
-      const platform = navigator.platform
-      const userAgent = navigator.userAgent
-
-      let lineIndex = 0
-      let charIndex = 0
-
-      const typeCharacter = () => {
-        const lines = [
-          "",
-          '<span class="text-cyan-400">$ pyguard --version</span>',
-          '<span class="text-green-400">PyGuard v2.0.0</span> - Pre-Runtime Python Validation',
-          '<span class="text-gray-400">Powered by Claude Code SDK + Groq Vision API</span>',
-          "",
-          '<span class="text-cyan-400">$ cat /proc/system_info</span>',
-          `<span class="text-yellow-400">platform=</span><span class="text-green-300">"${platform}"</span>`,
-          `<span class="text-yellow-400">user_agent=</span><span class="text-green-300">"${userAgent}"</span>`,
-          "",
-          '<span class="text-cyan-400">$ pyguard status</span>',
-          '<span class="text-green-400">✓ Claude Code SDK:</span> <span class="text-white">Connected</span>',
-          '<span class="text-green-400">✓ MCP Tools:</span> <span class="text-white">Active</span>',
-          '<span class="text-green-400">✓ Groq Vision:</span> <span class="text-white">Ready</span>',
-          '<span class="text-green-400">✓ Pattern DB:</span> <span class="text-white">13+ patterns loaded</span>',
-          "",
-          '<span class="text-yellow-400">💡 Type</span> <span class="text-cyan-400">help</span> <span class="text-yellow-400">to see available commands</span>',
-          "",
-        ]
-
-        if (lineIndex >= lines.length) {
-          setIsInteractive(true)
-          return
-        }
-
-        const currentLine = lines[lineIndex]
-
-        if (charIndex === 0) {
-          setTerminalLines((prev) => [...prev, ""])
-        }
-
-        if (charIndex < currentLine.length) {
-          const partialLine = currentLine.slice(0, charIndex + 1)
-          setTerminalLines((prev) => {
-            const newLines = [...prev]
-            newLines[newLines.length - 1] = partialLine
-            return newLines
-          })
-          charIndex++
-
-          const typingSpeed = currentLine.startsWith("$") ? 2.5 : Math.random() * 1.25 + 1
-
-          setTimeout(typeCharacter, typingSpeed)
-        } else {
-          charIndex = 0
-          lineIndex++
-
-          const pauseTime = currentLine === "" ? 6.25 : currentLine.startsWith("$") ? 25 : 12.5
-
-          setTimeout(typeCharacter, pauseTime)
-        }
-      }
-
-      typeCharacter()
-    }
-
-    initTerminal()
-
-    let i = 0
-    const typeTimer = setInterval(() => {
-      if (i < FULL_TEXT.length) {
-        setDisplayText(FULL_TEXT.slice(0, i + 1))
-        i++
-      } else {
-        clearInterval(typeTimer)
-      }
-    }, 4.75)
-
-    const cursorTimer = setInterval(() => {
-      setShowCursor((prev) => !prev)
-    }, 125)
-
     const inputCursorTimer = setInterval(() => {
       setShowInputCursor((prev) => !prev)
     }, 100)
 
     return () => {
-      clearInterval(typeTimer)
-      clearInterval(cursorTimer)
       clearInterval(inputCursorTimer)
       clearExitTimeouts()
     }
@@ -393,7 +250,7 @@ export function PyGuardTerminal({ onExitTriggered }: PyGuardTerminalProps) {
 
   useEffect(() => {
     const handleGlobalKeydown = (e: KeyboardEvent) => {
-      if (window.innerWidth > 768 && isInteractive && !isExitSequenceActive) {
+      if (window.innerWidth > 768 && connectionState === 'connected' && !isExitSequenceActive && !isExecuting) {
         const target = e.target as HTMLElement
         const isInputElement =
           target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.contentEditable === "true"
@@ -406,7 +263,7 @@ export function PyGuardTerminal({ onExitTriggered }: PyGuardTerminalProps) {
 
     document.addEventListener("keydown", handleGlobalKeydown)
     return () => document.removeEventListener("keydown", handleGlobalKeydown)
-  }, [isInteractive, isExitSequenceActive])
+  }, [connectionState, isExitSequenceActive, isExecuting])
 
   useEffect(() => {
     if (showBSOD && countdown > 0) {
@@ -421,6 +278,22 @@ export function PyGuardTerminal({ onExitTriggered }: PyGuardTerminalProps) {
 
   const handleManualRestart = () => {
     window.location.reload()
+  }
+
+  // Connection state indicator component
+  const renderConnectionState = () => {
+    switch (connectionState) {
+      case 'connecting':
+        return <div className="text-cyan-400 animate-pulse text-xs">🔌 Connecting...</div>
+      case 'waking':
+        return <div className="text-yellow-400 animate-pulse text-xs">⏳ Waking up...</div>
+      case 'connected':
+        return <div className="text-green-400 text-xs">● Online</div>
+      case 'disconnected':
+        return <div className="text-red-400 text-xs">● Offline</div>
+      case 'error':
+        return <div className="text-red-400 text-xs">❌ Connection Error</div>
+    }
   }
 
   if (showBSOD) {
@@ -495,6 +368,9 @@ export function PyGuardTerminal({ onExitTriggered }: PyGuardTerminalProps) {
               <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
               <div className="w-3 h-3 bg-primary rounded-full"></div>
               <span className="ml-4 text-xs text-muted-foreground font-mono">terminal://pyguard.dev</span>
+              <div className="ml-auto">
+                {renderConnectionState()}
+              </div>
             </div>
 
             <div className="p-8 font-mono">
@@ -519,9 +395,9 @@ export function PyGuardTerminal({ onExitTriggered }: PyGuardTerminalProps) {
                   )
                 })}
 
-                {isInteractive && !isExitSequenceActive && (
+                {connectionState === 'connected' && !isExitSequenceActive && (
                   <div className="flex items-center mt-2">
-                    <span className="text-green-400 font-bold">root@pyguard:~#</span>
+                    <span className="text-green-400 font-bold">$</span>
                     <div className="relative flex-1 ml-1">
                       <input
                         ref={inputRef}
@@ -529,13 +405,14 @@ export function PyGuardTerminal({ onExitTriggered }: PyGuardTerminalProps) {
                         value={userInput}
                         onChange={(e) => setUserInput(e.target.value)}
                         onKeyDown={handleInputSubmit}
-                        className="bg-transparent border-none outline-none text-muted-foreground font-mono w-full"
+                        disabled={isExecuting}
+                        className="bg-transparent border-none outline-none text-muted-foreground font-mono w-full disabled:opacity-50"
                         autoComplete="off"
                         spellCheck={false}
-                        placeholder="Type 'help' for commands..."
+                        placeholder={isExecuting ? "Executing..." : "Type 'help' for commands..."}
                       />
                       <span
-                        className={`absolute left-0 top-0 ${showInputCursor ? "opacity-100 text-green-400 font-bold text-lg" : "opacity-0"} transition-opacity duration-100 pointer-events-none`}
+                        className={`absolute left-0 top-0 ${showInputCursor && !isExecuting ? "opacity-100 text-green-400 font-bold text-lg" : "opacity-0"} transition-opacity duration-100 pointer-events-none`}
                         style={{ left: userInput.length > 0 ? `${userInput.length * 0.6}em` : "0" }}
                       >
                         _

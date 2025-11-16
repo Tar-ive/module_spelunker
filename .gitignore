@@ -25,3 +25,18 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Heroku backup files with secrets
+docs/heroku-backups/*.md
+
+# Python backend
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+backend/.env
+backend/venv/
+backend/env/
+*.egg-info/
+.pytest_cache/
