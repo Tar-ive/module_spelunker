@@ -78,48 +78,16 @@ class TerminalManager:
                 env={**os.environ}  # Pass through environment variables
             )
             
-            # Stream both stdout and stderr
-            async def read_stream(stream, is_stderr=False):
-                """Read from stream line by line."""
-                while True:
-                    line = await stream.readline()
-                    if not line:
-                        break
-                    decoded = line.decode('utf-8').rstrip()
-                    if decoded:
-                        if is_stderr:
-                            yield f'<span class="text-red-400">{decoded}</span>'
-                        else:
-                            yield decoded
-            
-            # Create tasks for both streams
-            stdout_task = asyncio.create_task(self._collect_lines(read_stream(process.stdout, False)))
-            stderr_task = asyncio.create_task(self._collect_lines(read_stream(process.stderr, True)))
-            
-            # Wait with timeout
+            # Stream output in real-time with timeout
             try:
-                # Stream output as it comes
-                done = False
-                while not done:
-                    # Check if process is still running
-                    if process.returncode is not None:
-                        done = True
-                    
-                    # Yield any available lines from stdout
-                    stdout_lines = await asyncio.wait_for(stdout_task, timeout=0.1) if not stdout_task.done() else []
-                    for line in stdout_lines:
-                        yield line
-                    
-                    # Yield any available lines from stderr
-                    stderr_lines = await asyncio.wait_for(stderr_task, timeout=0.1) if not stderr_task.done() else []
-                    for line in stderr_lines:
-                        yield line
-                    
-                    if not done:
-                        await asyncio.sleep(0.1)
+                async for line in asyncio.wait_for(
+                    self._stream_process_output(process),
+                    timeout=self.timeout
+                ):
+                    yield line
                 
-                # Wait for process to complete with timeout
-                await asyncio.wait_for(process.wait(), timeout=self.timeout)
+                # Wait for process to exit cleanly
+                await process.wait()
                 
             except asyncio.TimeoutError:
                 # Kill process on timeout
@@ -137,9 +105,82 @@ class TerminalManager:
         except Exception as e:
             yield f'<span class="text-red-400">❌ Error: {str(e)}</span>'
     
-    async def _collect_lines(self, stream):
-        """Collect all lines from async generator."""
-        lines = []
-        async for line in stream:
-            lines.append(line)
-        return lines
+    async def _stream_process_output(self, process) -> AsyncIterator[str]:
+        """
+        Stream stdout and stderr from process in real-time.
+        
+        Reads line-by-line from both streams until both are closed.
+        Uses non-blocking reads with short timeouts to avoid hanging.
+        """
+        stdout_done = False
+        stderr_done = False
+        
+        while not (stdout_done and stderr_done):
+            # Read from stdout
+            if not stdout_done:
+                try:
+                    line = await asyncio.wait_for(
+                        process.stdout.readline(),
+                        timeout=0.1
+                    )
+                    if line:
+                        decoded = line.decode('utf-8').rstrip()
+                        if decoded:
+                            yield decoded
+                    else:
+                        stdout_done = True
+                except asyncio.TimeoutError:
+                    pass  # No data available, try stderr
+            
+            # Read from stderr
+            if not stderr_done:
+                try:
+                    line = await asyncio.wait_for(
+                        process.stderr.readline(),
+                        timeout=0.1
+                    )
+                    if line:
+                        decoded = line.decode('utf-8').rstrip()
+                        if decoded:
+                            yield f'<span class="text-red-400">{decoded}</span>'
+                    else:
+                        stderr_done = True
+                except asyncio.TimeoutError:
+                    pass  # No data available
+            
+            # Check if process has exited
+            if process.returncode is not None:
+                # Process finished, drain any remaining output
+                if not stdout_done:
+                    try:
+                        line = await asyncio.wait_for(
+                            process.stdout.readline(),
+                            timeout=0.1
+                        )
+                        if line:
+                            decoded = line.decode('utf-8').rstrip()
+                            if decoded:
+                                yield decoded
+                        else:
+                            stdout_done = True
+                    except asyncio.TimeoutError:
+                        stdout_done = True
+                
+                if not stderr_done:
+                    try:
+                        line = await asyncio.wait_for(
+                            process.stderr.readline(),
+                            timeout=0.1
+                        )
+                        if line:
+                            decoded = line.decode('utf-8').rstrip()
+                            if decoded:
+                                yield f'<span class="text-red-400">{decoded}</span>'
+                        else:
+                            stderr_done = True
+                    except asyncio.TimeoutError:
+                        stderr_done = True
+                
+                # If process is done and no more output, exit
+                if stdout_done and stderr_done:
+                    break
